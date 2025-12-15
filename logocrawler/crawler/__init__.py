@@ -1,10 +1,19 @@
 from .fetch import fetch_html
 from .parse import parse, WebsiteInfo
+from urllib.parse import urlparse, urlunparse
 
-def find_logo(url: str) -> WebsiteInfo:
-    html = fetch_html(url)
-    if html is None:
-        # If no HTML could be fetched, simply return an empty info object.
-        return WebsiteInfo(url)
-    # Parse HTML.
-    return parse(url, html)
+# A bit of a hackaround to ensure netloc is properly parsed.
+# This is because urlparse will *only* parse netloc if it's preceded by '//':
+# https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlparse
+def normalize(address: str) -> str:
+    return '//' + address if '//' not in address else address
+
+def find_logo(website: str) -> WebsiteInfo:
+    """Fetches a website's logo. Normalizes the URL before doing so."""
+    parts = urlparse(normalize(website))
+    for scheme in ('https', 'http'):
+        url  = urlunparse(parts._replace(scheme=scheme))
+        html = fetch_html(url)
+        if html is not None:
+            return parse(url, html)
+    return WebsiteInfo(website)

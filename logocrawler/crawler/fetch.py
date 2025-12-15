@@ -12,15 +12,12 @@ def fetch_html(url: str) -> str | None:
         res = requests.get(url, headers=headers, timeout=timeout)
         res.raise_for_status() # I prefer raising.
 
-        # Ensure we have actually received HTML.
-        # 
         # In the real world, I would use a proper parser for Content-Type headers.
         # As this is just a small project, though, string comparison is fine.
         content_type = res.headers.get('Content-Type', '')
         if 'text/html' not in content_type.lower():
             return None
         return res.text
-
-    except RequestException as e:
-        # todo: proper error handling / logging
+    except RequestException:
+        # todo: proper error hanDling / logging
         return None
