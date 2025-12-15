@@ -1,50 +1,46 @@
 from dataclasses import dataclass
-from enum import IntEnum
 from urllib.parse import urljoin
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from functools import reduce
 from .utils import get_string_attribute
 
-ancestor_tags: list[str] = ['header', 'nav', 'a']
-"""List of relevant ancestor tags we want to look for."""
+# Priorities values below can (and should) be tweaked.
+# I just sorta picked what I thought made sense.
+# In the real world, we would have to actually test how well they perform.
 
-class Ancestor(IntEnum):
-    """
-    Relevant ancestors an <img> element can have, and their priority when selecting.
-    Higher priority is better.
-    When an <img> has more than one relevant ancestor, select the one with the highest priority.
-    """
-    HEADER = 3
-    NAV    = 2
-    ANCHOR = 1
-    OTHER  = 0
-    @classmethod
-    def from_tag(cls, tag: str):
-        match tag:
-            case 'header': return cls.HEADER
-            case 'nav'   : return cls.NAV
-            case 'a'     : return cls.ANCHOR
-            case _       : return cls.OTHER
+ancestors: dict[str, int] = {
+    'header': 4,
+    'nav'   : 3,
+    'a'     : 1,
+}
+"""Mapping of ancestor tags to their priority."""
 
-class KeywordPlacement(IntEnum):
-    """
-    Places where the 'logo' keyword could be found, and their associated priority.
-    Higher priority is better.
-    If the keyword was found in more than once place, select the one with the highest priority.
-    """
-    ALT  = 2
-    SRC  = 1
-    NONE = 0
+keywords: dict[str, int] = {
+    'logo'    : 4,
+    'brand'   : 3,
+    'branding': 3,
+    'icon'    : 2,
+    'name'    : 1,
+}
+"""Mapping of keywords to their priority."""
 
-# Dataclasses are one of my favorite things about Python. I'm using them here for a few reasons:
-# - less boilerplate, implicit constructor
-# - free __hash__() implementation based on class fields
-# - free __eq__() and __le__() implementation based on class fields, *in order*.
+ancestor_list = list(ancestors.keys())
+keyword_list  = list(keywords.keys())
+
+def calculate_priority(keyword: int, ancestor: int) -> float:
+    """
+    Calculate a logo candidate's priority based on:
+    - Its most relevant ancestor.
+    - Its most relevant keyword (in the "alt" or "src" attribute).
+    """
+    return keyword * 1.5 + ancestor
+
+# I adore dataclasses! A lot less boilerplate.
+# This class is just a more descriptive tuple.
 @dataclass(order=True)
 class LogoCandidate:
     """A candidate for the website's logo."""
-    keyword: KeywordPlacement
-    ancestor: Ancestor
+    priority: float
     src: str
 
 @dataclass
@@ -59,21 +55,16 @@ class WebsiteInfo:
     logo: str | None = None
     favicon: str | None = None
 
-# In the real world, we would have more keywords to match against.
-# I would also do proper parsing instead of a 'needle in haystack' search.
-# However, as this is a small test assignment, I think this is just enough.
-def find_keyword(img: Tag) -> KeywordPlacement:
-    """Try to find the 'logo' keyword in the image's attributes."""
-    alt = get_string_attribute(img, 'src') or ''
-    src = get_string_attribute(img, 'alt') or ''
-
-    if 'logo' in alt.lower():
-        return KeywordPlacement.ALT
-
-    if 'logo' in src.lower():
-        return KeywordPlacement.SRC
-
-    return KeywordPlacement.NONE
+# Parsing would be preferrable over a 'needle in haystack' search.
+# As this is a small project, however, proper parsing is overkill.
+def find_keywords(text: str) -> int:
+    """Looks for keywords in a string. Returns highest keyword priority."""
+    low  = text.lower()
+    best = 0
+    for word in keyword_list:
+        if word in low:
+            best = max(best, keywords.get(word, 0))
+    return best
 
 # Select best logo candidate. For each <img> element in the DOM:
 # - find all ancestors in the ['header', 'nav', 'a'] set
@@ -90,18 +81,22 @@ def select_logo(base_url: str, soup: BeautifulSoup) -> str | None:
             continue
         src = urljoin(base_url, src)
 
-        # Find most relevant ancestor.
-        ancestor: Ancestor = reduce(
-            lambda acc, e: max(acc, Ancestor.from_tag(e.name)),
-            img.find_parents(ancestor_tags),
-            Ancestor.OTHER,
+        # Find keyword priority.
+        alt = get_string_attribute(img, 'alt') or ''
+        keyword = max(
+            find_keywords(alt),
+            find_keywords(src),
         )
-        # Find relevant keyword placement.
-        keyword = find_keyword(img)
-
+        # Find ancestor priority.
+        ancestor: int = reduce(
+            lambda acc, e: max(acc, ancestors.get(e.name, 0)),
+            img.find_parents(ancestor_list),
+            0,
+        )
         # Select the best logo candidate by ordering.
-        candidate = LogoCandidate(keyword, ancestor, src)
-        best = max(best, candidate) if best is not None else candidate
+        priority  = calculate_priority(keyword, ancestor)
+        candidate = LogoCandidate(priority, src)
+        best      = max(best, candidate) if best is not None else candidate
     return best and best.src
 
 def select_favicon(base_url: str, soup: BeautifulSoup) -> str | None:
@@ -122,9 +117,11 @@ def parse(base_url: str, html: str) -> WebsiteInfo:
     """
     output = WebsiteInfo(base_url)
     try:
+        # Parse HTML.
         soup = BeautifulSoup(html, 'html.parser')
+
         # Select best logo candidate + favicon.
-        output.logo = select_logo(base_url, soup)
+        output.logo    = select_logo(base_url, soup)
         output.favicon = select_favicon(base_url, soup)
         return output
     except Exception as e:
