@@ -3,7 +3,7 @@ from enum import IntEnum
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
 from functools import reduce
-from utils.attr import get_string_attribute
+from .utils import get_string_attribute
 
 ancestor_tags: list[str] = ['header', 'nav', 'a']
 """List of relevant ancestor tags we want to look for."""
