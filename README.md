@@ -7,7 +7,8 @@ This project also does handle inline SVG logos, which introduce another layer of
 
 ## API
 
-The code should be very self-explanatory. In any case:
+I haeve included a minimal API for extracting the logo + favicon from a website.
+The code should be self-explanatory.
 
 ```python3
 import logocrawler
