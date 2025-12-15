@@ -5,6 +5,17 @@ The crawler operates on static HTML only and does not render the DOM. This means
 
 This project also does handle inline SVG logos, which introduce another layer of complexity to the task.
 
+## API
+
+The code should be very self-explanatory. In any case:
+
+```python3
+import logocrawler
+
+logo = logocrawler.find_logo('facebook.com')
+print(logo)
+```
+
 ## Running the Project
 
 I've included a minimal CLI interface for convenience.
