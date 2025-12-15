@@ -3,7 +3,7 @@ from requests.exceptions import RequestException
 
 # I chose to use an honest user agent, despite knowing that
 # using a browser UA will lead to better results,
-headers = {'User-Agent': 'logocrawler/1.0', 'Accept': 'text-html'}
+headers = {'User-Agent': 'logocrawler/0.1', 'Accept': 'text-html'}
 timeout = 5
 
 def fetch_html(url: str) -> str | None:
