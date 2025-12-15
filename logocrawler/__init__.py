@@ -1,1 +1,1 @@
-from .crawler import find_logo, LogoData
+from .crawler import find_logo, WebsiteInfo

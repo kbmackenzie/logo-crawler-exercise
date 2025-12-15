@@ -48,14 +48,16 @@ class LogoCandidate:
     src: str
 
 @dataclass
-class LogoData:
+class WebsiteInfo:
     """
-    Logo information for a website:
-    - the best logo candidate
-    - the favicon, if any
+    Relevant information about a website:
+    - The URL.
+    - The best candidate for a logo, if any.
+    - The favicon, if any.
     """
-    logo: LogoCandidate | None
-    favicon: str | None
+    url: str
+    logo: str | None = None
+    favicon: str | None = None
 
 # In the real world, we would have more keywords to match against.
 # I would also do proper parsing instead of a 'needle in haystack' search.
@@ -76,7 +78,7 @@ def find_keyword(img: Tag) -> KeywordPlacement:
 # Select best logo candidate. For each <img> element in the DOM:
 # - find all ancestors in the ['header', 'nav', 'a'] set
 # - look at alt and src attributes for the 'logo' keyword
-def select_logo(base_url: str, soup: BeautifulSoup) -> LogoCandidate | None:
+def select_logo(base_url: str, soup: BeautifulSoup) -> str | None:
     """
     Select best logo candidate in the DOM.
     """
@@ -100,7 +102,7 @@ def select_logo(base_url: str, soup: BeautifulSoup) -> LogoCandidate | None:
         # Select the best logo candidate by ordering.
         candidate = LogoCandidate(keyword, ancestor, src)
         best = max(best, candidate) if best is not None else candidate
-    return best
+    return best and best.src
 
 def select_favicon(base_url: str, soup: BeautifulSoup) -> str | None:
     """Get a website's favicon, if any."""
@@ -113,18 +115,18 @@ def select_favicon(base_url: str, soup: BeautifulSoup) -> str | None:
         return urljoin(base_url, rel)
     return None
 
-def parse(base_url: str, html: str) -> LogoData | None:
+def parse(base_url: str, html: str) -> WebsiteInfo:
     """
     Parse HTML, extracting logo candidates.
     A favicon is also extracted as an extra consideration.
     """
+    output = WebsiteInfo(base_url)
     try:
         soup = BeautifulSoup(html, 'html.parser')
-        
         # Select best logo candidate + favicon.
-        logo = select_logo(base_url, soup)
-        favi = select_favicon(base_url, soup)
-        return LogoData(logo, favi)
+        output.logo = select_logo(base_url, soup)
+        output.favicon = select_favicon(base_url, soup)
+        return output
     except Exception as e:
         # todo: proper error handling
-        return None
+        return output 
