@@ -19,5 +19,5 @@ def fetch_html(url: str) -> str | None:
             return None
         return res.text
     except RequestException:
-        # todo: proper error hanDling / logging
+        # todo: Add proper error handling / logging.
         return None
