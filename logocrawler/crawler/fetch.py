@@ -10,15 +10,14 @@ def fetch_html(url: str) -> str | None:
     """Fetches a page's HTML content as a string."""
     try:
         res = requests.get(url, headers=headers, timeout=timeout)
-        # I prefer letting it raise here.
-        res.raise_for_status()
+        res.raise_for_status() # I prefer raising.
 
         # Ensure we have actually received HTML.
         # 
-        # In the real world, I would referrably look into using a proper parser
-        # for Content-Type headers rather than simply string matching.
+        # In the real world, I would use a proper parser for Content-Type headers.
+        # As this is just a small project, though, string comparison is fine.
         content_type = res.headers.get('Content-Type', '')
-        if 'text/html' not in content_type:
+        if 'text/html' not in content_type.lower():
             return None
         return res.text
 
