@@ -1,7 +1,6 @@
-## This repository contains a take-home interview assignment.
-### It is not intended to represent production-quality or maintained code.
-
-<br />
+### This repository contains a take-home interview assignment.
+#### It is not intended to represent production-quality or maintained code.
+<hr>
 
 A simple logo crawler that tries to select the best logo candidate for a given website.
 It also scrapes favicons when available.
