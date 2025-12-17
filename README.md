@@ -23,8 +23,7 @@ print(logo)
 
 ## Running the Project
 
-I've included a minimal CLI interface for convenience.
-It accepts an optional path to a CSV file. If none is provided, it reads `./websites.csv` by default.
+I’ve included a minimal CLI for convenience. It accepts an optional path to a CSV file: if none is provided, it defaults to `./websites.csv`, and if `-` is provided, it reads from STDIN.
 
 The output is written to stdout as CSV, with three columns: website url, logo url, favicon url.
 
